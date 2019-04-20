@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net47</TargetFramework>
+    <AssemblyName>LINQPad.DumpEditable</AssemblyName>
+    <RootNamespace>LINQPad.DumpEditable</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Version>0.0.1</Version>
+    <Authors>Ryan Davis</Authors>
+    <Product>DumpEditable.LINQPad</Product>
+    <Description>Extensible inline editor output for LINQPad</Description>
+    <Copyright>(c) Ryan Davis 2019</Copyright>
+    <PackageLicenseExpression></PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/rdavisau/linqpad-dump-editable</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/rdavisau/linqpad-dump-editable</RepositoryUrl>
+    <PackageTags>LINQPad, Dump, editor</PackageTags>
+    <PackageId>DumpEditable.LINQPad</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LINQPad" Version="5.26.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualBasic" />
+  </ItemGroup>
+
+</Project>
