@@ -89,7 +89,7 @@ namespace LINQPad.DumpEditable
                         OnChanged?.Invoke();;
                     });
 
-            return o;
+            return p.GetValue(o);
         }
     }
 
