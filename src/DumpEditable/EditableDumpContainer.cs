@@ -32,7 +32,10 @@ namespace LINQPad.DumpEditable
         }
 
         public void AddEditorRule(EditorRule rule)
-            => _editorRules.Insert(0, rule);
+        {
+            _editorRules.Insert(0, rule);
+            SetContent();
+        }
 
         public EditableDumpContainer(T obj, bool failSilently = false)
         {
@@ -117,7 +120,6 @@ namespace LINQPad.DumpEditable
                     return true;
                 }),
             };
-
     }
 
     public static class EditableDumpContainer
