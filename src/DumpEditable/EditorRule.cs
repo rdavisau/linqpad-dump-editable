@@ -41,14 +41,17 @@ namespace LINQPad.DumpEditable
                             .Concat(new [] { "]" }))
                         );
 
-        public static EditorRule ForTypeWithStringBasedEditor<T>(ParseFunc<string, T, bool> parseFunc)
+        public static EditorRule ForTypeWithStringBasedEditor<T>(ParseFunc<string, T, bool> parseFunc, bool supportNullable = true)
             => new EditorRule
             {
-                Match = (o, info) => info.PropertyType == typeof(T),
-                Editor = (o, info, changed) => GetStringInputBasedEditor(o, info, changed, parseFunc)
+                Match = (o, info) => 
+                    info.PropertyType == typeof(T)
+                    || (supportNullable && Nullable.GetUnderlyingType(info.PropertyType) == typeof(T)),
+                Editor = (o, info, changed) => GetStringInputBasedEditor(o, info, changed, parseFunc, supportNullable)
             };
 
-        protected static object GetStringInputBasedEditor<TOut>(object o, PropertyInfo p, Action changeCallback, EditorRule.ParseFunc<string, TOut, bool> parseFunc)
+        protected static object GetStringInputBasedEditor<TOut>(object o, PropertyInfo p, Action changeCallback, EditorRule.ParseFunc<string, TOut, bool> parseFunc,
+            bool supportNullable = true)
         {
             var currVal = p.GetValue(o);
             var desc = currVal != null ? $"{currVal}" : "null";
@@ -58,10 +61,16 @@ namespace LINQPad.DumpEditable
                 var newVal = Interaction.InputBox("Set value for " + p.Name, p.Name, $"{currVal}");
 
                 var canConvert = parseFunc(newVal, out var output);
-                if (!canConvert)
-                    return;
-
-                p.SetValue(o, output);
+                if (canConvert)
+                {
+                    p.SetValue(o, output);
+                }
+                else if (supportNullable && (newVal == String.Empty))
+                {
+                    p.SetValue(o, null);
+                }
+                else
+                    return; // can't convert
 
                 changeCallback?.Invoke();
 
