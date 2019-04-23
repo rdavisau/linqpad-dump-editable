@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Microsoft.VisualBasic;
+using Newtonsoft.Json;
 
 namespace LINQPad.DumpEditable
 {
@@ -27,6 +29,7 @@ namespace LINQPad.DumpEditable
                 Match = (o, info) => info.PropertyType == typeof(T),
                 Editor = getEditor,
             };
+
         public static EditorRule ForEnums() =>
             EditorRule.For(
                 (_, p) => p.PropertyType.IsEnum,
@@ -41,26 +44,49 @@ namespace LINQPad.DumpEditable
                             .Concat(new [] { "]" }))
                         );
 
-        public static EditorRule ForTypeWithStringBasedEditor<T>(ParseFunc<string, T, bool> parseFunc, bool supportNullable = true)
+        public static EditorRule ForTypeWithStringBasedEditor<T>(ParseFunc<string, T, bool> parseFunc, bool supportNullable = true, bool supportEnumerable = true)
             => new EditorRule
             {
                 Match = (o, info) => 
                     info.PropertyType == typeof(T)
-                    || (supportNullable && Nullable.GetUnderlyingType(info.PropertyType) == typeof(T)),
-                Editor = (o, info, changed) => GetStringInputBasedEditor(o, info, changed, parseFunc, supportNullable)
+                    || (supportNullable && Nullable.GetUnderlyingType(info.PropertyType) == typeof(T))
+                    || (supportEnumerable && GetArrayLikeElementType(info.PropertyType) == typeof(T)),
+                Editor = (o, info, changed) => GetStringInputBasedEditor(o, info, changed, parseFunc, supportNullable, supportEnumerable)
             };
 
         protected static object GetStringInputBasedEditor<TOut>(object o, PropertyInfo p, Action changeCallback, EditorRule.ParseFunc<string, TOut, bool> parseFunc,
-            bool supportNullable = true)
+            bool supportNullable = true, bool supportEnumerable = true)
         {
+            var type = p.PropertyType;
             var currVal = p.GetValue(o);
-            var desc = currVal != null ? $"{currVal}" : "null";
+            var isEnumerable = supportEnumerable && GetArrayLikeElementType(type) != null;
+
+            // handle string which is IEnumerable<char> 
+            if (typeof(TOut) == typeof(string) && GetArrayLikeElementType(type) == typeof(char))
+                isEnumerable = false;
+
+            var desc = currVal == null 
+                    ? "null"
+                    : (isEnumerable ? JsonConvert.SerializeObject(currVal) : $"{currVal}");
 
             var change = new Hyperlinq(() =>
             {
-                var newVal = Interaction.InputBox("Set value for " + p.Name, p.Name, $"{currVal}");
+                var newVal = Interaction.InputBox("Set value for " + p.Name, p.Name, desc);
 
                 var canConvert = parseFunc(newVal, out var output);
+                if (isEnumerable)
+                {
+                    try
+                    {
+                        var val = JsonConvert.DeserializeObject(newVal, type);
+                        p.SetValue(o, val);
+                        changeCallback?.Invoke();
+                    }
+                    catch
+                    {
+                        return; // can't deserialise
+                    }
+                }
                 if (canConvert)
                 {
                     p.SetValue(o, output);
@@ -78,6 +104,27 @@ namespace LINQPad.DumpEditable
 
             return Util.HorizontalRun(true, change);
         }
+
+        // https://stackoverflow.com/a/17713382/752273
+        public static Type GetArrayLikeElementType(Type type)
+        {
+            // Type is Array
+            // short-circuit if you expect lots of arrays 
+            if (type.IsArray)
+                return type.GetElementType();
+
+            // type is IEnumerable<T>;
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                return type.GetGenericArguments()[0];
+
+            // type implements/extends IEnumerable<T>;
+            var enumType = type.GetInterfaces()
+                .Where(t => t.IsGenericType &&
+                            t.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                .Select(t => t.GenericTypeArguments[0]).FirstOrDefault();
+            return enumType;
+        }
+
 
         public delegate V ParseFunc<T, U, V>(T input, out U output);
     }

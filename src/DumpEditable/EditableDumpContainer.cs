@@ -114,7 +114,7 @@ namespace LINQPad.DumpEditable
                 EditorRule.ForTypeWithStringBasedEditor<ulong>(ulong.TryParse),
                 EditorRule.ForTypeWithStringBasedEditor<DateTime>(DateTime.TryParse),
                 EditorRule.ForTypeWithStringBasedEditor<DateTimeOffset>(DateTimeOffset.TryParse),
-                EditorRule.ForTypeWithStringBasedEditor((string input, out string output) =>
+                EditorRule.ForTypeWithStringBasedEditor<string>((string input, out string output) =>
                 {
                     output = input;
                     return true;
