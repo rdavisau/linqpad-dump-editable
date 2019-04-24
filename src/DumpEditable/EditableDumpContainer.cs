@@ -155,6 +155,10 @@ namespace LINQPad.DumpEditable
                     output = input;
                     return true;
                 }),
+                EditorRule.ForTypeWithStringBasedEditor<bool>(bool.TryParse),
+                EditorRule.ForTypeWithStringBasedEditor<byte>(byte.TryParse),
+                EditorRule.ForTypeWithStringBasedEditor<sbyte>(sbyte.TryParse),
+                EditorRule.ForTypeWithStringBasedEditor<char>(char.TryParse),
             };
     }
 
