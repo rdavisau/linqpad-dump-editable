@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using LINQPad.DumpEditable.Helpers;
 
 namespace LINQPad.DumpEditable
 {
@@ -49,19 +51,14 @@ namespace LINQPad.DumpEditable
         {
             object content = _obj;
 
+            var isEnumerable = content.GetType().GetArrayLikeElementType() != null;
+
             try
             {
-                content =
-                    _obj
-                        .GetType()
-                        .GetProperties()
-                        .Select(p =>
-                            new
-                            {
-                                Property = p.Name,
-                                Value = GetEditor(_obj, p)
-                            })
-                        .ToList();
+                content = 
+                    !isEnumerable 
+                        ? GetObjectEditorRepresentation(_obj)
+                        : (_obj as IEnumerable).OfType<object>().Select(GetObjectEditorRepresentation).ToList();
             }
             catch
             {
@@ -72,7 +69,19 @@ namespace LINQPad.DumpEditable
             Content = content;
         }
 
-        private object GetEditor(object o, PropertyInfo p)
+        private object GetObjectEditorRepresentation(object input)
+            => input
+                .GetType()
+                .GetProperties()
+                .Select(p =>
+                    new
+                    {
+                        Property = p.Name,
+                        Value = GetPropertyEditor(input, p)
+                    })
+                .ToList();
+
+        private object GetPropertyEditor(object o, PropertyInfo p)
         {
             var allRules = Enumerable.Concat(_editorRules, GlobalEditorRules);
 
@@ -87,9 +96,9 @@ namespace LINQPad.DumpEditable
                         if (_changeHandlers.TryGetValue(p, out var handler))
                             handler.Invoke((T)o,p,newVal);
 
-                        OnPropertyValueChanged?.Invoke(_obj, p, newVal);
+                        OnPropertyValueChanged?.Invoke((T)o, p, newVal);
 
-                        OnChanged?.Invoke();;
+                        OnChanged?.Invoke();
                     });
 
             return p.GetValue(o);
