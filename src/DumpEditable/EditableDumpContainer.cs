@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using LINQPad.DumpEditable.Helpers;
+using LINQPad.DumpEditable.Models;
 
 namespace LINQPad.DumpEditable
 {
@@ -70,16 +71,42 @@ namespace LINQPad.DumpEditable
         }
 
         private object GetObjectEditorRepresentation(object input)
-            => input
+        {
+            var properties = input
                 .GetType()
                 .GetProperties()
                 .Select(p =>
-                    new
+                    new PropertyEditor
                     {
                         Property = p.Name,
                         Value = GetPropertyEditor(input, p)
                     })
                 .ToList();
+
+            return GetDynamicEditorTypeForObject(input, properties);
+        }
+
+        private readonly Dictionary<Type, Type> _dynamicTypeMappings = new Dictionary<Type, Type>();
+        private object GetDynamicEditorTypeForObject(object input, List<PropertyEditor> propertyEditors)
+        {
+            var inType = input.GetType();
+
+            if (!_dynamicTypeMappings.TryGetValue(inType, out var outType))
+            {
+                outType = DynamicTypeBuilder.CreateTypeForEditor(input, propertyEditors);
+                _dynamicTypeMappings[inType] = outType;
+            }
+
+            var @out = Activator.CreateInstance(outType);
+            var props = outType.GetProperties().ToDictionary(p => p.Name);
+            foreach (var pe in propertyEditors)
+            {
+                var p = props[pe.Property];
+                p.SetValue(@out, pe.Value);
+            }
+
+            return @out;
+        }
 
         private object GetPropertyEditor(object o, PropertyInfo p)
         {
