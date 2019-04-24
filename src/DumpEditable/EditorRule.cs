@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using LINQPad.DumpEditable.Helpers;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 
@@ -40,7 +41,7 @@ namespace LINQPad.DumpEditable
                         p.PropertyType
                             .GetEnumValues()
                             .OfType<object>()
-                            .Select(v => new Hyperlinq(() => { p.SetValue(o, v); c(); }, $"{v}")))
+                            .Select(v => new Hyperlinq(() => { SetValue(o,p,v); c(); }, $"{v}")))
                             .Concat(new [] { "]" }))
                         );
 
@@ -79,7 +80,7 @@ namespace LINQPad.DumpEditable
                     try
                     {
                         var val = JsonConvert.DeserializeObject(newVal, type);
-                        p.SetValue(o, val);
+                        SetValue(o,p,val);
                         changeCallback?.Invoke();
                     }
                     catch
@@ -89,11 +90,11 @@ namespace LINQPad.DumpEditable
                 }
                 if (canConvert)
                 {
-                    p.SetValue(o, output);
+                    SetValue(o,p,output);
                 }
                 else if (supportNullable && (newVal == String.Empty))
                 {
-                    p.SetValue(o, null);
+                    SetValue(o, p, null);
                 }
                 else
                     return; // can't convert
@@ -125,7 +126,14 @@ namespace LINQPad.DumpEditable
             return enumType;
         }
 
-
+        public static void SetValue(object o, PropertyInfo p, object v)
+        {
+            if (o.GetType().IsAnonymousType())
+                AnonymousObjectMutator.Set(o, p, v);
+            else
+                p.SetValue(o, v);
+        }
+        
         public delegate V ParseFunc<T, U, V>(T input, out U output);
     }
 }
