@@ -51,7 +51,7 @@ namespace LINQPad.DumpEditable
                 Match = (o, info) => 
                     info.PropertyType == typeof(T)
                     || (supportNullable && Nullable.GetUnderlyingType(info.PropertyType) == typeof(T))
-                    || (supportEnumerable && GetArrayLikeElementType(info.PropertyType) == typeof(T)),
+                    || (supportEnumerable && info.PropertyType.GetArrayLikeElementType() == typeof(T)),
                 Editor = (o, info, changed) => GetStringInputBasedEditor(o, info, changed, parseFunc, supportNullable, supportEnumerable)
             };
 
@@ -60,10 +60,10 @@ namespace LINQPad.DumpEditable
         {
             var type = p.PropertyType;
             var currVal = p.GetValue(o);
-            var isEnumerable = supportEnumerable && GetArrayLikeElementType(type) != null;
+            var isEnumerable = supportEnumerable && type.GetArrayLikeElementType() != null;
 
             // handle string which is IEnumerable<char> 
-            if (typeof(TOut) == typeof(string) && GetArrayLikeElementType(type) == typeof(char))
+            if (typeof(TOut) == typeof(string) && type.GetArrayLikeElementType() == typeof(char))
                 isEnumerable = false;
 
             var desc = currVal == null 
@@ -105,27 +105,7 @@ namespace LINQPad.DumpEditable
 
             return Util.HorizontalRun(true, change);
         }
-
-        // https://stackoverflow.com/a/17713382/752273
-        public static Type GetArrayLikeElementType(Type type)
-        {
-            // Type is Array
-            // short-circuit if you expect lots of arrays 
-            if (type.IsArray)
-                return type.GetElementType();
-
-            // type is IEnumerable<T>;
-            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                return type.GetGenericArguments()[0];
-
-            // type implements/extends IEnumerable<T>;
-            var enumType = type.GetInterfaces()
-                .Where(t => t.IsGenericType &&
-                            t.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                .Select(t => t.GenericTypeArguments[0]).FirstOrDefault();
-            return enumType;
-        }
-
+        
         public static void SetValue(object o, PropertyInfo p, object v)
         {
             if (o.GetType().IsAnonymousType())
