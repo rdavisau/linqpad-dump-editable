@@ -12,7 +12,7 @@ namespace LINQPad.DumpEditable
 {
     public partial class EditableDumpContainer<T> : DumpContainer
     {
-        private readonly T _obj;
+        private readonly object _obj;
         private readonly bool _failSilently;
         private readonly Dictionary<PropertyInfo, Action<T, object>> _changeHandlers 
             = new Dictionary<PropertyInfo, Action<T, object>>();
@@ -43,6 +43,24 @@ namespace LINQPad.DumpEditable
         }
 
         public EditableDumpContainer(T obj, bool failSilently = false)
+        {
+            if (obj.GetType().GetArrayLikeElementType() != null)
+                throw new Exception("You must Dump enumerable-like objects with the DumpEnumerable overload.");
+
+            if (EditableDumpContainer.DefaultOptions.AutomaticallyKeepQueryRunning)
+            {
+                KeepRunningToken = Util.KeepRunning();
+                EditableDumpContainer.KeepRunningTokens.Add(KeepRunningToken);
+            }
+
+            _obj = obj;
+            _failSilently = failSilently;
+
+            SetContent();
+        }
+
+
+        public EditableDumpContainer(IEnumerable<T> obj, bool failSilently = false)
         {
             if (EditableDumpContainer.DefaultOptions.AutomaticallyKeepQueryRunning)
             {
@@ -176,6 +194,9 @@ namespace LINQPad.DumpEditable
         public static DumpEditableOptions DefaultOptions = DumpEditableOptions.Defaults;
 
         public static EditableDumpContainer<T> For<T>(T obj, bool failSilently = false)
+            => new EditableDumpContainer<T>(obj, failSilently);
+
+        public static EditableDumpContainer<T> ForEnumerable<T>(IEnumerable<T> obj, bool failSilently = false)
             => new EditableDumpContainer<T>(obj, failSilently);
     }
 }

@@ -18,5 +18,16 @@ namespace LINQPad.DumpEditable
 
             return obj;
         }
+
+        public static IEnumerable<T> DumpEditableEnumerable<T>(this IEnumerable<T> obj, bool failSilently = false)
+            => DumpEditableEnumerable<T>(obj, out _, failSilently);
+
+        public static IEnumerable<T> DumpEditableEnumerable<T>(this IEnumerable<T> obj, out EditableDumpContainer<T> container, bool failSilently = false)
+        {
+            container = new EditableDumpContainer<T>(obj, failSilently);
+            container.Dump();
+
+            return obj;
+        }
     }
 }
