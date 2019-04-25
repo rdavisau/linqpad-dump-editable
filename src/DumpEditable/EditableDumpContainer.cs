@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reactive.Disposables;
 using System.Reflection;
 using LINQPad.DumpEditable.Helpers;
 using LINQPad.DumpEditable.Models;
@@ -20,6 +21,7 @@ namespace LINQPad.DumpEditable
 
         public Action OnChanged { get; set; }
         public Action<T, PropertyInfo, object> OnPropertyValueChanged { get; set; }
+        public IDisposable KeepRunningToken { get; private set; }
 
         public static void AddGlobalEditorRule(EditorRule rule) 
             => GlobalEditorRules.Insert(0, rule);
@@ -42,12 +44,18 @@ namespace LINQPad.DumpEditable
 
         public EditableDumpContainer(T obj, bool failSilently = false)
         {
+            if (EditableDumpContainer.DefaultOptions.AutomaticallyKeepQueryRunning)
+            {
+                KeepRunningToken = Util.KeepRunning();
+                EditableDumpContainer.KeepRunningTokens.Add(KeepRunningToken);
+            }
+
             _obj = obj;
             _failSilently = failSilently;
 
             SetContent();
         }
-        
+
         private void SetContent()
         {
             object content = _obj;
@@ -164,6 +172,9 @@ namespace LINQPad.DumpEditable
 
     public static class EditableDumpContainer
     {
+        public static readonly CompositeDisposable KeepRunningTokens = new CompositeDisposable();
+        public static DumpEditableOptions DefaultOptions = DumpEditableOptions.Defaults;
+
         public static EditableDumpContainer<T> For<T>(T obj, bool failSilently = false)
             => new EditableDumpContainer<T>(obj, failSilently);
     }
