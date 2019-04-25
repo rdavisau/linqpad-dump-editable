@@ -94,7 +94,6 @@ namespace LINQPad.DumpEditable
                     {
                         var val = JsonConvert.DeserializeObject(newVal, type);
                         SetValue(o,p,val);
-                        changeCallback?.Invoke();
                     }
                     catch
                     {
