@@ -11,20 +11,20 @@ namespace LINQPad.DumpEditable
     public partial class EditorRule
     {
         public Func<object, PropertyInfo, bool> Match { get; set; }
-        public Func<object, PropertyInfo, Action, object> Editor { get; set; }
+        public Func<object, PropertyInfo, Func<object>, Action<object>, object> Editor { get; set; }
     }
 
     public partial class EditorRule
     {
         public static EditorRule For(Func<object, PropertyInfo, bool> rule,
-            Func<object, PropertyInfo, Action, object> getEditor)
+            Func<object, PropertyInfo, Func<object>, Action<object>, object> getEditor)
             => new EditorRule
             {
                 Match = rule,
                 Editor = getEditor,
             };
 
-        public static EditorRule ForType<T>(Func<object, PropertyInfo, Action, object> getEditor)
+        public static EditorRule ForType<T>(Func<object, PropertyInfo, Func<object>, Action<object>, object> getEditor)
             => new EditorRule
             {
                 Match = (o, info) => info.PropertyType == typeof(T),
@@ -34,27 +34,27 @@ namespace LINQPad.DumpEditable
         public static EditorRule ForEnums() =>
             EditorRule.For(
                 (_, p) => p.PropertyType.IsEnum,
-                (o, p, c) =>
+                (o, p, get, set) =>
                     Util.HorizontalRun(true,
                         Enumerable.Concat(
-                            new object[] { p.GetValue(o), "[" },
+                            new object[] { get(), "[" },
                         p.PropertyType
                             .GetEnumValues()
                             .OfType<object>()
-                            .Select(v => new Hyperlinq(() => { SetValue(o,p,v); c(); }, $"{v}")))
+                            .Select(v => new Hyperlinq(() => set(v), $"{v}")))
                             .Concat(new [] { "]" }))
                         );
 
         public static EditorRule ForBool() =>
             EditorRule.For(
                 (_, p) => p.PropertyType == typeof(bool) || p.PropertyType == typeof(bool?),
-                (o, p, c) =>
+                (o, p, get, set) =>
                     Util.HorizontalRun(true,
                         Enumerable.Concat(
-                                new object[] { p.GetValue(o) ?? NullString, "[" },
+                                new object[] { get() ?? NullString, "[" },
                                 new bool?[] { true, false, null }
                                     .Where(b => p.PropertyType == typeof(bool?) || b != null)
-                                    .Select(v => new Hyperlinq(() => { SetValue(o, p, v); c(); }, $"{(object)v ?? NullString }")))
+                                    .Select(v => new Hyperlinq(() => set(v), $"{(object)v ?? NullString }")))
                             .Concat(new[] { "]" }))
             );
 
@@ -65,14 +65,14 @@ namespace LINQPad.DumpEditable
                     info.PropertyType == typeof(T)
                     || (supportNullable && Nullable.GetUnderlyingType(info.PropertyType) == typeof(T))
                     || (supportEnumerable && info.PropertyType.GetArrayLikeElementType() == typeof(T)),
-                Editor = (o, info, changed) => GetStringInputBasedEditor(o, info, changed, parseFunc, supportNullable, supportEnumerable)
+                Editor = (o, info, get, set) => GetStringInputBasedEditor(o, info, get, set, parseFunc, supportNullable, supportEnumerable)
             };
 
-        protected static object GetStringInputBasedEditor<TOut>(object o, PropertyInfo p, Action changeCallback, EditorRule.ParseFunc<string, TOut, bool> parseFunc,
+        protected static object GetStringInputBasedEditor<TOut>(object o, PropertyInfo p, Func<object> getCurrValue, Action<object> setNewValue, EditorRule.ParseFunc<string, TOut, bool> parseFunc,
             bool supportNullable = true, bool supportEnumerable = true)
         {
             var type = p.PropertyType;
-            var currVal = p.GetValue(o);
+            var currVal = getCurrValue();
             var isEnumerable = supportEnumerable && type.GetArrayLikeElementType() != null;
 
             // handle string which is IEnumerable<char> 
@@ -93,7 +93,7 @@ namespace LINQPad.DumpEditable
                     try
                     {
                         var val = JsonConvert.DeserializeObject(newVal, type);
-                        SetValue(o,p,val);
+                        setNewValue(val);
                     }
                     catch
                     {
@@ -102,28 +102,17 @@ namespace LINQPad.DumpEditable
                 }
                 else if (canConvert)
                 {
-                    SetValue(o,p,output);
+                    setNewValue(output);
                 }
                 else if (supportNullable && (newVal == String.Empty))
                 {
-                    SetValue(o, p, null);
+                    setNewValue(null);
                 }
                 else
                     return; // can't convert
-
-                changeCallback?.Invoke();
-
             }, desc);
 
             return Util.HorizontalRun(true, change);
-        }
-        
-        public static void SetValue(object o, PropertyInfo p, object v)
-        {
-            if (o.GetType().IsAnonymousType())
-                AnonymousObjectMutator.Set(o, p, v);
-            else
-                p.SetValue(o, v);
         }
         
         public delegate V ParseFunc<T, U, V>(T input, out U output);

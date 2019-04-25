@@ -137,8 +137,9 @@ namespace LINQPad.DumpEditable
 
             foreach (var editor in allRules)
                 if (editor.Match(o, p))
-                    return editor.Editor(o, p, () =>
+                    return editor.Editor(o, p, () => p.GetValue(o), (v) =>
                     {
+                        SetValue(o, p, v);
                         SetContent();
 
                         var newVal = p.GetValue(o);
@@ -152,6 +153,14 @@ namespace LINQPad.DumpEditable
                     });
 
             return p.GetValue(o);
+        }
+
+        public static void SetValue(object o, PropertyInfo p, object v)
+        {
+            if (o.GetType().IsAnonymousType())
+                AnonymousObjectMutator.Set(o, p, v);
+            else
+                p.SetValue(o, v);
         }
     }
 
