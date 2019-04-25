@@ -22,10 +22,7 @@ namespace LINQPad.DumpEditable
         public Action OnChanged { get; set; }
         public Action<T, PropertyInfo, object> OnPropertyValueChanged { get; set; }
         public IDisposable KeepRunningToken { get; private set; }
-
-        public static void AddGlobalEditorRule(EditorRule rule) 
-            => GlobalEditorRules.Insert(0, rule);
-
+        
         public void AddChangeHandler<U>(Expression<Func<T, U>> selector,
             Action<T, U> onChangedAction)
         {
@@ -136,7 +133,7 @@ namespace LINQPad.DumpEditable
 
         private object GetPropertyEditor(object o, PropertyInfo p)
         {
-            var allRules = Enumerable.Concat(_editorRules, GlobalEditorRules);
+            var allRules = Enumerable.Concat(_editorRules, EditableDumpContainer.GlobalEditorRules);
 
             foreach (var editor in allRules)
                 if (editor.Match(o, p))
@@ -158,9 +155,20 @@ namespace LINQPad.DumpEditable
         }
     }
 
-    public partial class EditableDumpContainer<T>
+    public static class EditableDumpContainer
     {
-        private static readonly List<EditorRule> GlobalEditorRules = GetDefaultEditors();
+        public static readonly CompositeDisposable KeepRunningTokens = new CompositeDisposable();
+        public static DumpEditableOptions DefaultOptions = DumpEditableOptions.Defaults;
+        public static EditableDumpContainer<T> For<T>(T obj, bool failSilently = false)
+            => new EditableDumpContainer<T>(obj, failSilently);
+
+        public static EditableDumpContainer<T> ForEnumerable<T>(IEnumerable<T> obj, bool failSilently = false)
+            => new EditableDumpContainer<T>(obj, failSilently);
+
+        public static void AddGlobalEditorRule(EditorRule rule)
+            => GlobalEditorRules.Insert(0, rule);
+
+        internal static readonly List<EditorRule> GlobalEditorRules = GetDefaultEditors();
         private static List<EditorRule> GetDefaultEditors() =>
             new List<EditorRule>
             {
@@ -186,17 +194,6 @@ namespace LINQPad.DumpEditable
                 EditorRule.ForTypeWithStringBasedEditor<sbyte>(sbyte.TryParse),
                 EditorRule.ForTypeWithStringBasedEditor<char>(char.TryParse),
             };
-    }
 
-    public static class EditableDumpContainer
-    {
-        public static readonly CompositeDisposable KeepRunningTokens = new CompositeDisposable();
-        public static DumpEditableOptions DefaultOptions = DumpEditableOptions.Defaults;
-
-        public static EditableDumpContainer<T> For<T>(T obj, bool failSilently = false)
-            => new EditableDumpContainer<T>(obj, failSilently);
-
-        public static EditableDumpContainer<T> ForEnumerable<T>(IEnumerable<T> obj, bool failSilently = false)
-            => new EditableDumpContainer<T>(obj, failSilently);
     }
 }
