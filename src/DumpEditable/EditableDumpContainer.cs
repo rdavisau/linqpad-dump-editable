@@ -139,6 +139,7 @@ namespace LINQPad.DumpEditable
             new List<EditorRule>
             {
                 EditorRule.ForEnums(),
+                EditorRule.ForBool(),
                 EditorRule.ForTypeWithStringBasedEditor<int>(int.TryParse),
                 EditorRule.ForTypeWithStringBasedEditor<uint>(uint.TryParse),
                 EditorRule.ForTypeWithStringBasedEditor<short>(short.TryParse),
@@ -155,7 +156,6 @@ namespace LINQPad.DumpEditable
                     output = input;
                     return true;
                 }),
-                EditorRule.ForTypeWithStringBasedEditor<bool>(bool.TryParse),
                 EditorRule.ForTypeWithStringBasedEditor<byte>(byte.TryParse),
                 EditorRule.ForTypeWithStringBasedEditor<sbyte>(sbyte.TryParse),
                 EditorRule.ForTypeWithStringBasedEditor<char>(char.TryParse),

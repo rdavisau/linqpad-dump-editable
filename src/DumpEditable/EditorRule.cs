@@ -45,6 +45,19 @@ namespace LINQPad.DumpEditable
                             .Concat(new [] { "]" }))
                         );
 
+        public static EditorRule ForBool() =>
+            EditorRule.For(
+                (_, p) => p.PropertyType == typeof(bool) || p.PropertyType == typeof(bool?),
+                (o, p, c) =>
+                    Util.HorizontalRun(true,
+                        Enumerable.Concat(
+                                new object[] { p.GetValue(o) ?? NullString, "[" },
+                                new bool?[] { true, false, null }
+                                    .Where(b => p.PropertyType == typeof(bool?) || b != null)
+                                    .Select(v => new Hyperlinq(() => { SetValue(o, p, v); c(); }, $"{(object)v ?? NullString }")))
+                            .Concat(new[] { "]" }))
+            );
+
         public static EditorRule ForTypeWithStringBasedEditor<T>(ParseFunc<string, T, bool> parseFunc, bool supportNullable = true, bool supportEnumerable = true)
             => new EditorRule
             {
@@ -67,7 +80,7 @@ namespace LINQPad.DumpEditable
                 isEnumerable = false;
 
             var desc = currVal == null 
-                    ? "null"
+                    ? NullString
                     : (isEnumerable ? JsonConvert.SerializeObject(currVal) : $"{currVal}");
 
             var change = new Hyperlinq(() =>
@@ -88,7 +101,7 @@ namespace LINQPad.DumpEditable
                         return; // can't deserialise
                     }
                 }
-                if (canConvert)
+                else if (canConvert)
                 {
                     SetValue(o,p,output);
                 }
@@ -115,5 +128,7 @@ namespace LINQPad.DumpEditable
         }
         
         public delegate V ParseFunc<T, U, V>(T input, out U output);
+
+        private const string NullString = "(null)";
     }
 }
