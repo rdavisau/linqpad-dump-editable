@@ -14,8 +14,8 @@ namespace LINQPad.DumpEditable
     {
         private readonly T _obj;
         private readonly bool _failSilently;
-        private readonly Dictionary<PropertyInfo, Action<T, PropertyInfo, object>> _changeHandlers 
-            = new Dictionary<PropertyInfo, Action<T, PropertyInfo, object>>();
+        private readonly Dictionary<PropertyInfo, Action<T, object>> _changeHandlers 
+            = new Dictionary<PropertyInfo, Action<T, object>>();
 
         private readonly List<EditorRule> _editorRules = new List<EditorRule>();
 
@@ -27,13 +27,13 @@ namespace LINQPad.DumpEditable
             => GlobalEditorRules.Insert(0, rule);
 
         public void AddChangeHandler<U>(Expression<Func<T, U>> selector,
-            Action<T, PropertyInfo, U> onChangedAction)
+            Action<T, U> onChangedAction)
         {
             var pi = (selector.Body as MemberExpression)?.Member as PropertyInfo;
             if (pi is null)
                 throw new Exception($"Invalid expression passed to {nameof(AddChangeHandler)}");
 
-            _changeHandlers[pi] = (obj, p, val) => onChangedAction(obj, p, (U) val);
+            _changeHandlers[pi] = (obj, val) => onChangedAction(obj, (U) val);
         }
 
         public void AddEditorRule(EditorRule rule)
@@ -129,7 +129,7 @@ namespace LINQPad.DumpEditable
                         var newVal = p.GetValue(o);
 
                         if (_changeHandlers.TryGetValue(p, out var handler))
-                            handler.Invoke((T)o,p,newVal);
+                            handler.Invoke((T)o,newVal);
 
                         OnPropertyValueChanged?.Invoke((T)o, p, newVal);
 
