@@ -162,6 +162,12 @@ namespace LINQPad.DumpEditable
             else
                 p.SetValue(o, v);
         }
+
+        public new void Refresh()
+        {
+            SetContent();
+            base.Refresh();
+        }
     }
 
     public static class EditableDumpContainer
