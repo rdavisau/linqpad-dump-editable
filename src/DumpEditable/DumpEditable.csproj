@@ -19,6 +19,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\..\linqpad-samples\**" Pack="True" PackagePath="linqpad-samples\" IncludeInPackage="true" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="LINQPad" Version="5.26.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
   </ItemGroup>
