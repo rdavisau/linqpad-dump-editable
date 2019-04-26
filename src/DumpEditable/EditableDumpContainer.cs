@@ -208,6 +208,8 @@ namespace LINQPad.DumpEditable
                 EditorRule.ForTypeWithStringBasedEditor<byte>(byte.TryParse),
                 EditorRule.ForTypeWithStringBasedEditor<sbyte>(sbyte.TryParse),
                 EditorRule.ForTypeWithStringBasedEditor<char>(char.TryParse),
+                EditorRule.ForExpansionAttribute(),
+                EditorRule.ForNestedAnonymousType()
             };
 
     }

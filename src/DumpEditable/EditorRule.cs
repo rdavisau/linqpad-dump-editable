@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using LINQPad.DumpEditable.Helpers;
+using LINQPad.DumpEditable.Models;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 
@@ -30,6 +31,28 @@ namespace LINQPad.DumpEditable
                 Match = (o, info) => info.PropertyType == typeof(T),
                 Editor = getEditor,
             };
+
+        public static EditorRule ForExpansionAttribute()
+            => EditorRule.For(
+                (_, p) => p.GetCustomAttributes<DumpEditableExpandAttribute>().Any(),
+                (o, p, get, set) =>
+                {
+                    var v = get();
+                    var editor = EditableDumpContainer.For(v);
+                    editor.OnChanged += () => set(v);
+                    return editor;
+                });
+
+        public static EditorRule ForNestedAnonymousType()
+            => EditorRule.For(
+                (_, p) => p.PropertyType.IsAnonymousType(),
+                (o, p, get, set) =>
+                {
+                    var v = get();
+                    var editor = EditableDumpContainer.For(v);
+                    editor.OnChanged += () => set(v);
+                    return editor;
+                });
 
         public static EditorRule ForEnums() =>
             EditorRule.For(
