@@ -32,9 +32,9 @@ namespace LINQPad.DumpEditable
                 Editor = getEditor,
             };
 
-        public static EditorRule ForExpansionAttribute()
+        public static EditorRule ForExpansion(Func<object, PropertyInfo, bool> rule)
             => EditorRule.For(
-                (_, p) => p.GetCustomAttributes<DumpEditableExpandAttribute>().Any(),
+                rule,
                 (o, p, get, set) =>
                 {
                     var v = get();
@@ -43,16 +43,11 @@ namespace LINQPad.DumpEditable
                     return editor;
                 });
 
+        public static EditorRule ForExpansionAttribute()
+            => EditorRule.ForExpansion((_, p) => p.GetCustomAttributes<DumpEditableExpandAttribute>().Any());
+
         public static EditorRule ForNestedAnonymousType()
-            => EditorRule.For(
-                (_, p) => p.PropertyType.IsAnonymousType(),
-                (o, p, get, set) =>
-                {
-                    var v = get();
-                    var editor = EditableDumpContainer.For(v);
-                    editor.OnChanged += () => set(v);
-                    return editor;
-                });
+            => EditorRule.ForExpansion((_, p) => p.PropertyType.IsAnonymousType());
 
         public static EditorRule ForEnums() =>
             EditorRule.For(
