@@ -14,7 +14,7 @@
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rdavisau/linqpad-dump-editable</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rdavisau/linqpad-dump-editable</RepositoryUrl>
-    <PackageTags>LINQPad, Dump, editor</PackageTags>
+    <PackageTags>LINQPad, Dump, editor, linqpad-samples</PackageTags>
     <PackageId>DumpEditable.LINQPad</PackageId>
   </PropertyGroup>
 
