@@ -13,7 +13,6 @@ namespace LINQPad.DumpEditable
     public partial class EditableDumpContainer<T> : DumpContainer
     {
         private readonly object _obj;
-        private readonly bool _failSilently;
         private readonly Dictionary<PropertyInfo, Action<T, object>> _changeHandlers 
             = new Dictionary<PropertyInfo, Action<T, object>>();
 
@@ -39,7 +38,7 @@ namespace LINQPad.DumpEditable
             SetContent();
         }
 
-        public EditableDumpContainer(T obj, bool failSilently = false)
+        public EditableDumpContainer(T obj)
         {
             if (obj.GetType().GetArrayLikeElementType() != null)
                 throw new Exception("You must Dump enumerable-like objects with the DumpEnumerable overload.");
@@ -51,13 +50,12 @@ namespace LINQPad.DumpEditable
             }
 
             _obj = obj;
-            _failSilently = failSilently;
 
             SetContent();
         }
 
 
-        public EditableDumpContainer(IEnumerable<T> obj, bool failSilently = false)
+        public EditableDumpContainer(IEnumerable<T> obj)
         {
             if (EditableDumpContainer.DefaultOptions.AutomaticallyKeepQueryRunning)
             {
@@ -66,7 +64,6 @@ namespace LINQPad.DumpEditable
             }
 
             _obj = obj;
-            _failSilently = failSilently;
 
             SetContent();
         }
@@ -86,7 +83,7 @@ namespace LINQPad.DumpEditable
             }
             catch
             {
-                if (!_failSilently)
+                if (!EditableDumpContainer.DefaultOptions.FailSilently)
                     throw;
             }
 
@@ -174,11 +171,11 @@ namespace LINQPad.DumpEditable
     {
         public static readonly CompositeDisposable KeepRunningTokens = new CompositeDisposable();
         public static DumpEditableOptions DefaultOptions = DumpEditableOptions.Defaults;
-        public static EditableDumpContainer<T> For<T>(T obj, bool failSilently = false)
-            => new EditableDumpContainer<T>(obj, failSilently);
+        public static EditableDumpContainer<T> For<T>(T obj)
+            => new EditableDumpContainer<T>(obj);
 
-        public static EditableDumpContainer<T> ForEnumerable<T>(IEnumerable<T> obj, bool failSilently = false)
-            => new EditableDumpContainer<T>(obj, failSilently);
+        public static EditableDumpContainer<T> ForEnumerable<T>(IEnumerable<T> obj)
+            => new EditableDumpContainer<T>(obj);
 
         public static void AddGlobalEditorRule(EditorRule rule)
             => GlobalEditorRules.Insert(0, rule);

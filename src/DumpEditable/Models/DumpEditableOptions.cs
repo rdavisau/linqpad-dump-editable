@@ -10,5 +10,6 @@ namespace LINQPad.DumpEditable.Models
     {
         public static DumpEditableOptions Defaults => new DumpEditableOptions();
         public bool AutomaticallyKeepQueryRunning { get; set; } = true;
+        public bool FailSilently { get; set; } = false;
     }
 }
