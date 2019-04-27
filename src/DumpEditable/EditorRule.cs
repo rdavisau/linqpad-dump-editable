@@ -101,9 +101,13 @@ namespace LINQPad.DumpEditable
                     ? NullString
                     : (isEnumerable ? JsonConvert.SerializeObject(currVal) : $"{currVal}");
 
+            // hyperlinq doesn't like empty strings
+            if (desc == String.Empty)
+                desc = EmptyString;
+
             var change = new Hyperlinq(() =>
             {
-                var newVal = Interaction.InputBox("Set value for " + p.Name, p.Name, desc);
+                var newVal = Interaction.InputBox("Set value for " + p.Name, p.Name, desc != EmptyString ? desc : String.Empty);
 
                 var canConvert = parseFunc(newVal, out var output);
                 if (isEnumerable)
@@ -136,5 +140,6 @@ namespace LINQPad.DumpEditable
         public delegate V ParseFunc<T, U, V>(T input, out U output);
 
         private const string NullString = "(null)";
+        private const string EmptyString = "(empty string)";
     }
 }
