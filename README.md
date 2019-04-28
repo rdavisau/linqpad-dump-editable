@@ -52,7 +52,7 @@ DumpEditable works by evaluating each property of the target object against `Edi
 For more control, you can implement an `EditorRule` from scratch, like in the below case where we match on a specific type's property, and provide an editor with images for content:
 
 ![adding a food selector rule](https://ryandavis.io/content/images/2019/04/dump-editable/editor-rule-foodselector.png)
-When creating editor rules, it's important to use the provided `setVal` callback, rather than applying reflection directly - the `setVal` callback encapsulates the functionality required to properly change a value, including refreshing the editor contents and applying special processing such as anonymous type mutation. 
+When creating editor rules, it's important to use the provided `setVal` callback, rather than applying reflection directly - the `setVal` callback encapsulates the functionality required to properly change a value, including refreshing the editor contents and applying special processing such as anonymous type mutation. If you want to suppress automatic refresh of an editor - for example, to avoid recreating a control - you can set `DisableAutomaticRefresh` of the editor rule to `false`, or specify it via the optional `disableAutomaticRefresh` parameter on `EditorRule.For` or `EditorRule.ForType`. 
 
 In both of the examples above we added 'global rules' that apply to all `EditableDumpContainer`s. You can also add a rule to an individual instance using the `AddEditorRule` method on that instance. Instance rules are evaluated before global rules.
 

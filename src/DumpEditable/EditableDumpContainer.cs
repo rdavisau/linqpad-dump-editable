@@ -137,7 +137,9 @@ namespace LINQPad.DumpEditable
                     return editor.Editor(o, p, () => p.GetValue(o), (v) =>
                     {
                         SetValue(o, p, v);
-                        SetContent();
+
+                        if (!editor.DisableAutomaticRefresh)
+                            SetContent();
 
                         var newVal = p.GetValue(o);
 

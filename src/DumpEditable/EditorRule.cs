@@ -13,23 +13,26 @@ namespace LINQPad.DumpEditable
     {
         public Func<object, PropertyInfo, bool> Match { get; set; }
         public Func<object, PropertyInfo, Func<object>, Action<object>, object> Editor { get; set; }
+        public bool DisableAutomaticRefresh { get; set; }
     }
 
     public partial class EditorRule
     {
         public static EditorRule For(Func<object, PropertyInfo, bool> rule,
-            Func<object, PropertyInfo, Func<object>, Action<object>, object> getEditor)
+            Func<object, PropertyInfo, Func<object>, Action<object>, object> getEditor, bool disableAutomaticRefresh = false)
             => new EditorRule
             {
                 Match = rule,
                 Editor = getEditor,
+                DisableAutomaticRefresh = disableAutomaticRefresh
             };
 
-        public static EditorRule ForType<T>(Func<object, PropertyInfo, Func<object>, Action<object>, object> getEditor)
+        public static EditorRule ForType<T>(Func<object, PropertyInfo, Func<object>, Action<object>, object> getEditor, bool disableAutomaticRefresh = false)
             => new EditorRule
             {
                 Match = (o, info) => info.PropertyType == typeof(T),
                 Editor = getEditor,
+                DisableAutomaticRefresh = disableAutomaticRefresh
             };
 
         public static EditorRule ForExpansion(Func<object, PropertyInfo, bool> rule)
