@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -41,7 +42,12 @@ namespace LINQPad.DumpEditable
                 (o, p, get, set) =>
                 {
                     var v = get();
-                    var editor = EditableDumpContainer.For(v);
+                    var isEnumerable = v.GetType().GetArrayLikeElementType() != null;
+
+                    var editor = isEnumerable
+                        ? EditableDumpContainer.ForEnumerable(((IEnumerable)v).OfType<object>())
+                        : EditableDumpContainer.For(v);
+
                     editor.OnChanged += () => set(v);
                     return editor;
                 });
@@ -50,7 +56,9 @@ namespace LINQPad.DumpEditable
             => EditorRule.ForExpansion((_, p) => p.GetCustomAttributes<DumpEditableExpandAttribute>().Any());
 
         public static EditorRule ForNestedAnonymousType()
-            => EditorRule.ForExpansion((_, p) => p.PropertyType.IsAnonymousType());
+            => EditorRule.ForExpansion((_, p) => 
+                    p.PropertyType.IsAnonymousType()
+                || (p.PropertyType.GetArrayLikeElementType()?.IsAnonymousType() ?? false));
 
         public static EditorRule ForEnums() =>
             EditorRule.For(
