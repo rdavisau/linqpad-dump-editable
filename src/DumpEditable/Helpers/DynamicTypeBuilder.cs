@@ -12,6 +12,9 @@ namespace LINQPad.DumpEditable.Helpers
     // adapted from https://stackoverflow.com/a/3862241/752273
     public static class DynamicTypeBuilder
     {
+        private const string AnonymousTypeIndicator = "<>f__AnonymousType";
+        private const string AnonymousTypeReplacement = "ø";
+
         public static Type CreateTypeForEditor(object source, List<PropertyEditor> properties)
         {
             var tb = GetTypeBuilder(source);
@@ -29,6 +32,9 @@ namespace LINQPad.DumpEditable.Helpers
             var typeSignature = !String.IsNullOrWhiteSpace(type.Namespace)
                 ? $"{type.Namespace}.{type.Name}"
                 : type.Name;
+
+            if (typeSignature.StartsWith(AnonymousTypeIndicator))
+                typeSignature = AnonymousTypeReplacement;
 
             var an = new AssemblyName(typeSignature);
             var assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);
