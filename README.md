@@ -20,7 +20,7 @@ This section outlines the basic concepts available in DumpEditable. The LINQPad 
 ### Showing an editor
 Getting an editor onto the results pane is as easy as calling `.DumpEditable()` on an object. `DumpEditable()` returns the input object so can be chained similarly to how LINQPad's `Dump()` can:
 
-![basic poco dumped with editor displayed](https://ryandavis.io/content/images/2019/04/dump-editable/basic.png)
+![basic poco dumped with editor displayed](https://ryandavis.io/content/images/2019/05/dump-editable/basic.png)
 Here we see we got a basic editor for our `Pet` object without writing any code! Clicking any of the properties will allow us to modify the property values. 
 
 ### Handling changes 
@@ -32,14 +32,14 @@ In some cases, you may be running some kind of loop in your query which will giv
 
 DumpEditable allows you to dump `IEnumerable`s using the `DumpEditableEnumerable()` extension. Many times you'll want to be dumping a 'materialised' collection (a `List`, array, etc. ) - if you dump an enumerable proper it will be re-evaluated after every change, and if that results in new objects, the changes made to the old objects will not be apparent. However, there are some situations in which re-evaluation can be useful.
 
-![enumerable dump output in results pane](https://ryandavis.io/content/images/2019/04/dump-editable/enumerable.png)
+![enumerable dump output in results pane](https://ryandavis.io/content/images/2019/05/dump-editable/enumerable.png)
 When adding change handlers to dumped collections you can use the object parameters on `OnPropertyValueChanged` `(*obj*, prop, val) => ` and `AddChangeHandler (*obj*, value) => ` to know which item was affected. 
 
 ### Dumping anonymous types
 
 In C#, anonymous types are read-only. However, defining and modifying anonymous type instances would be super convenient for interactive LINQPad queries, so DumpEditable makes it possible. 
 
-![anonymous type dump output in results pane](https://ryandavis.io/content/images/2019/04/dump-editable/anonymous.png)
+![anonymous type dump output in results pane](https://ryandavis.io/content/images/2019/05/dump-editable/anonymous.png)
 Modifying instances of anonymous types can cause problems in the Real World, because methods like `GetHashCode()` and `Equals()` - which benefit from the assumption that anonymous types are read only - can become incorrect. For basic editor control scenarios this is not a problem - but if you're doing anything more advanced, remember to be aware of the implications. 
 
 ### Adding custom editors
@@ -47,7 +47,7 @@ Modifying instances of anonymous types can cause problems in the Real World, bec
 DumpEditable works by evaluating each property of the target object against `EditorRule`s to decide whether a specific editor should be displayed. If no `EditorRule`s match for a given property, the default LINQPad output will be displayed instead. DumpEditable ships with basic editors for primitives and enums. You can extend DumpEditable by adding custom `EditorRule`s, which will be evaluated prior to the built-ins (FIFO). Rules consist of a `match` function, which decides whether the rule should apply to a given object property, and a `getEditor` function, which provides the editor content that will be displayed for the object property. The editor content should include any functionality required to get new values.
 
 `EditorRule` has a few helper methods you can use to make things easier. For example, the aptly named `EditorRule.ForTypeWithStringBasedEditor<T>(Func<string, out T, bool> parseFunc)` lets you provide a type parameter `T` and a `TryParse`-style `string -> T` conversion function, and gives you the rest - a basic input dialog implementation - for free. In the below case, we add support for editing `Guid`s:
-![adding a basic guid editor rule](https://ryandavis.io/content/images/2019/04/dump-editable/editor-rule-basic.png)
+![adding a basic guid editor rule](https://ryandavis.io/content/images/2019/05/dump-editable/editor-rule-basic.png)
 
 For more control, you can implement an `EditorRule` from scratch, like in the below case where we match on a specific type's property, and provide an editor with images for content:
 
@@ -55,6 +55,14 @@ For more control, you can implement an `EditorRule` from scratch, like in the be
 When creating editor rules, it's important to use the provided `setVal` callback, rather than applying reflection directly - the `setVal` callback encapsulates the functionality required to properly change a value, including refreshing the editor contents and applying special processing such as anonymous type mutation. If you want to suppress automatic refresh of an editor - for example, to avoid recreating a control - you can set `DisableAutomaticRefresh` of the editor rule to `false`, or specify it via the optional `disableAutomaticRefresh` parameter on `EditorRule.For` or `EditorRule.ForType`. 
 
 In both of the examples above we added 'global rules' that apply to all `EditableDumpContainer`s. You can also add a rule to an individual instance using the `AddEditorRule` method on that instance. Instance rules are evaluated before global rules.
+
+DumpEditable also includes a slider control wrapper that you can pass to `getEditor`, accessible via the `Editors.Slider` overloads. 
+
+![using a slider editor](https://ryandavis.io/content/images/2019/05/dump-editable/slider-editor.png)
+You can provide a minimum and maximum value using the appropriate overload, or rely on the "*" settings button at runtime. As the LINQPad slider works with integers only, using it with types other than integers requires you to provide `Func<T, object> toInt` and `Func<int,T>` conversion parameters. Note that your conversion function does not need to result in an `int` - rather, it must result in something that can be turned into an `int` using `Convert.ToInt32`, which DumpEditable will call internally. This saves you from needing to pollute your code with casts. A typical use of the conversion functions might be to specify a percentage-based slider by multiplying/dividing by 100. 
+
+![using a slider conversion function](https://ryandavis.io/content/images/2019/05/dump-editable/slider-percent.png)
+There might be other clever ways to make use of this functionality.
 
 ### Nested object editor expansion
 
@@ -79,12 +87,6 @@ Right now, the featureset of DumpEditable is mostly driven by things I've though
 .DumpEditable(
     c => c.WithEditorRule(..)
           .AddChangeHandler(..))
-```
-- baked in support for some of the newer LINQPad controls like the slider, eg:
-```
-.DumpEditable(c => c.WithSlider(
-        min: 0.0, max: 1.0, 
-        forProperties: p => p.Percent1, p => p.Percent2)))
 ```
 
 ## Contributions
