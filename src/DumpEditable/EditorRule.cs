@@ -63,29 +63,18 @@ namespace LINQPad.DumpEditable
         public static EditorRule ForEnums() =>
             EditorRule.For(
                 (_, p) => p.PropertyType.IsEnum,
-                (o, p, get, set) =>
-                    Util.HorizontalRun(true,
-                        Enumerable.Concat(
-                            new object[] { get(), "[" },
-                        p.PropertyType
-                            .GetEnumValues()
-                            .OfType<object>()
-                            .Select(v => new Hyperlinq(() => set(v), $"{v}")))
-                            .Concat(new [] { "]" }))
-                        );
+                (o, p, get, set) => EditableDumpContainer.DefaultOptions.OptionsEditor(
+                    p.PropertyType.GetEnumValues().OfType<object>(), 
+                    false, 
+                    null)(o,p,get,set));
 
         public static EditorRule ForBool() =>
             EditorRule.For(
                 (_, p) => p.PropertyType == typeof(bool) || p.PropertyType == typeof(bool?),
-                (o, p, get, set) =>
-                    Util.HorizontalRun(true,
-                        Enumerable.Concat(
-                                new object[] { get() ?? NullString, "[" },
-                                new bool?[] { true, false, null }
-                                    .Where(b => p.PropertyType == typeof(bool?) || b != null)
-                                    .Select(v => new Hyperlinq(() => set(v), $"{(object)v ?? NullString }")))
-                            .Concat(new[] { "]" }))
-            );
+                (o, p, get, set) => EditableDumpContainer.DefaultOptions.OptionsEditor(
+                        new [] { true, false }.OfType<object>(),
+                        p.PropertyType == typeof(bool?),
+                        null)(o, p, get, set));
 
         public static EditorRule ForTypeWithStringBasedEditor<T>(ParseFunc<string, T, bool> parseFunc, bool supportNullable = true, bool supportEnumerable = true)
             => new EditorRule
@@ -94,63 +83,22 @@ namespace LINQPad.DumpEditable
                     info.PropertyType == typeof(T)
                     || (supportNullable && Nullable.GetUnderlyingType(info.PropertyType) == typeof(T))
                     || (supportEnumerable && info.PropertyType.GetArrayLikeElementType() == typeof(T)),
-                Editor = (o, info, get, set) => GetStringInputBasedEditor(o, info, get, set, parseFunc, supportNullable, supportEnumerable)
+                Editor = (o, info, get, set) => EditableDumpContainer.DefaultOptions.StringBasedEditor(WrapParseFunc(parseFunc), supportNullable, supportEnumerable)(o, info, get, set),          
+                DisableAutomaticRefresh = true,
             };
 
-        protected static object GetStringInputBasedEditor<TOut>(object o, PropertyInfo p, Func<object> getCurrValue, Action<object> setNewValue, EditorRule.ParseFunc<string, TOut, bool> parseFunc,
-            bool supportNullable = true, bool supportEnumerable = true)
-        {
-            var type = p.PropertyType;
-            var currVal = getCurrValue();
-            var isEnumerable = supportEnumerable && type.GetArrayLikeElementType() != null;
-
-            // handle string which is IEnumerable<char> 
-            if (typeof(TOut) == typeof(string) && type.GetArrayLikeElementType() == typeof(char))
-                isEnumerable = false;
-
-            var desc = currVal == null 
-                    ? NullString
-                    : (isEnumerable ? JsonConvert.SerializeObject(currVal) : $"{currVal}");
-
-            // hyperlinq doesn't like empty strings
-            if (desc == String.Empty)
-                desc = EmptyString;
-
-            var change = new Hyperlinq(() =>
+        private static ParseFunc<string, object, bool> WrapParseFunc<T>(ParseFunc<string, T, bool> parseFunc) 
+            => (string input, out object output) =>
             {
-                var newVal = Interaction.InputBox("Set value for " + p.Name, p.Name, desc != EmptyString ? desc : String.Empty);
+                var ret = parseFunc(input, out var tOut);
+                output = tOut;
 
-                var canConvert = parseFunc(newVal, out var output);
-                if (isEnumerable)
-                {
-                    try
-                    {
-                        var val = JsonConvert.DeserializeObject(newVal, type);
-                        setNewValue(val);
-                    }
-                    catch
-                    {
-                        return; // can't deserialise
-                    }
-                }
-                else if (canConvert)
-                {
-                    setNewValue(output);
-                }
-                else if (supportNullable && (newVal == String.Empty))
-                {
-                    setNewValue(null);
-                }
-                else
-                    return; // can't convert
-            }, desc);
+                return ret;
+            };
 
-            return Util.HorizontalRun(true, change);
-        }
-        
         public delegate V ParseFunc<T, U, V>(T input, out U output);
-
-        private const string NullString = "(null)";
-        private const string EmptyString = "(empty string)";
+        
+        public const string NullString = "(null)";
+        public const string EmptyString = "(empty string)";
     }
 }
