@@ -7,3 +7,4 @@ Dumping Enumerable-likes.linq
 Adding Editors (basic).linq
 Adding Editors (less basic).linq
 Adding Editors (non-global).linq
+Slider Edutir.linq
