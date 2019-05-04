@@ -12,6 +12,47 @@ namespace LINQPad.DumpEditable
 {
     public static class Editors
     {
+        public static Func<object, PropertyInfo, Func<object>, Action<object>, object> Slider(int min, int max)
+            => Slider<int>(min, max, x => x, x => x);
+
+        public static Func<object, PropertyInfo, Func<object>, Action<object>, object> Slider<T>(
+            T min, T max,
+            Func<T, object> toInt,
+            Func<int, T> fromInt)
+            => (o, p, gv, sv) =>
+            {
+                var v = gv();
+                var vc = new DumpContainer { Content = v, Style = "min-width: 30px" };
+                var s = new RangeControl(
+                        Convert.ToInt32(toInt(min)),
+                        Convert.ToInt32(toInt(max)),
+                        Convert.ToInt32(toInt((T)v)))
+                    { IsMultithreaded = true };
+
+                s.ValueInput += delegate
+                {
+                    var val = fromInt(s.Value);
+                    sv(val);
+                    vc.Content = val;
+                };
+
+                var config = new {Min = min, Max = max};
+                var editor = EditableDumpContainer.For(config);
+                editor.AddChangeHandler(x => x.Min, (_, m) => s.Min = Convert.ToInt32(toInt(m)));
+                editor.AddChangeHandler(x => x.Max, (_, m) => s.Max = Convert.ToInt32(toInt(m)));
+
+                var editorDc = new DumpContainer { Content = editor };
+                var display = true;
+                var toggleEditor = new Hyperlinq(() =>
+                {
+                    display = !display;
+                    editorDc.Style = display ? "" : "display:none";
+                }, "[*]");
+                toggleEditor.Action();
+
+                return Util.VerticalRun(vc, Util.HorizontalRun(false, s, toggleEditor), editorDc);
+            };
+
         public static Func<object, PropertyInfo, Func<object>, Action<object>, object> ChoicesWithRadioButtons<T>(
             IEnumerable<T> choices, bool allowNull, Func<T, string> toString = null) =>
             ChoicesWithRadioButtons(choices.OfType<object>(), allowNull, o => toString((T) o));
