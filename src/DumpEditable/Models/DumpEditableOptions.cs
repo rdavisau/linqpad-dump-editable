@@ -20,7 +20,7 @@ namespace LINQPad.DumpEditable.Models
         public bool AutomaticallyKeepQueryRunning { get; set; }
         public bool FailSilently { get; set; }
 
-        public Func<IEnumerable<object>, bool, Func<object,string>, Func<object, PropertyInfo, Func<object>, Action<object>, object>> OptionsEditor;
+        public Func<IEnumerable<object>, NullableOptionInclusionKind, Func<object,string>, Func<object, PropertyInfo, Func<object>, Action<object>, object>> OptionsEditor;
         public Func<EditorRule.ParseFunc<string, object, bool>, bool, bool, Func<object, PropertyInfo, Func<object>, Action<object>, object>> StringBasedEditor;
     }
 }

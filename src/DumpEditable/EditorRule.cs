@@ -62,18 +62,32 @@ namespace LINQPad.DumpEditable
 
         public static EditorRule ForEnums() =>
             EditorRule.For(
-                (_, p) => p.PropertyType.IsEnum,
-                (o, p, get, set) => EditableDumpContainer.DefaultOptions.OptionsEditor(
-                    p.PropertyType.GetEnumValues().OfType<object>(), 
-                    false, 
-                    null)(o,p,get,set));
+                (_, p) => p.PropertyType.IsEnum || p.PropertyType.IsNullableEnum(),
+                (o, p, get, set) =>
+                {
+                    var isNullable = p.PropertyType.IsNullableEnum();
+                    var type = isNullable 
+                        ? Nullable.GetUnderlyingType(p.PropertyType) 
+                        : p.PropertyType;
+
+                    var options = type.GetEnumValues().OfType<object>().ToList();
+
+                    return EditableDumpContainer.DefaultOptions.OptionsEditor(
+                        options,
+                        isNullable 
+                            ? NullableOptionInclusionKind.IncludeAtEnd
+                            : NullableOptionInclusionKind.DontInclude,
+                        null)(o, p, get, set);
+                });
 
         public static EditorRule ForBool() =>
             EditorRule.For(
                 (_, p) => p.PropertyType == typeof(bool) || p.PropertyType == typeof(bool?),
                 (o, p, get, set) => EditableDumpContainer.DefaultOptions.OptionsEditor(
                         new [] { true, false }.OfType<object>(),
-                        p.PropertyType == typeof(bool?),
+                        p.PropertyType == typeof(bool?) 
+                            ? NullableOptionInclusionKind.IncludeAtEnd
+                            : NullableOptionInclusionKind.DontInclude,
                         null)(o, p, get, set));
 
         public static EditorRule ForTypeWithStringBasedEditor<T>(ParseFunc<string, T, bool> parseFunc, bool supportNullable = true, bool supportEnumerable = true)
@@ -95,7 +109,7 @@ namespace LINQPad.DumpEditable
 
                 return ret;
             };
-
+        
         public delegate V ParseFunc<T, U, V>(T input, out U output);
         
         public const string NullString = "(null)";

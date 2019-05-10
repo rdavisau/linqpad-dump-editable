@@ -31,5 +31,8 @@ namespace LINQPad.DumpEditable.Helpers
                 .Select(t => t.GenericTypeArguments[0]).FirstOrDefault();
             return enumType;
         }
+
+        public static bool IsNullableEnum(this Type t)
+            => (Nullable.GetUnderlyingType(t)?.IsEnum ?? false);
     }
 }

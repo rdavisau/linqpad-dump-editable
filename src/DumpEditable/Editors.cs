@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using LINQPad.Controls;
 using LINQPad.DumpEditable.Helpers;
+using LINQPad.DumpEditable.Models;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 
@@ -54,11 +55,11 @@ namespace LINQPad.DumpEditable
             };
 
         public static Func<object, PropertyInfo, Func<object>, Action<object>, object> ChoicesWithRadioButtons<T>(
-            IEnumerable<T> choices, bool allowNull, Func<T, string> toString = null) =>
-            ChoicesWithRadioButtons(choices.OfType<object>(), allowNull, o => toString((T) o));
+            IEnumerable<T> choices, NullableOptionInclusionKind nullKind, Func<T, string> toString = null) =>
+            ChoicesWithRadioButtons(choices.OfType<object>(), nullKind, o => toString((T) o));
         
         public static Func<object, PropertyInfo, Func<object>, Action<object>, object> ChoicesWithRadioButtons(
-            IEnumerable<object> choices, bool allowNull, Func<object, string> toString = null) =>
+            IEnumerable<object> choices, NullableOptionInclusionKind nullKind, Func<object, string> toString = null) =>
             (o, p, gv, sv) =>
             {
                 var group = Guid.NewGuid().ToString();
@@ -69,22 +70,42 @@ namespace LINQPad.DumpEditable
                         .Select(x => new RadioButton(@group, toString?.Invoke(x) ?? $"{x}", x.Equals(v), b => sv(x)))
                         .ToList();
 
-                if (allowNull)
-                    radioButtons.Add(new RadioButton(@group, NullString, v == null, _ => sv(null)));
+                var nullOption = new RadioButton(@group, NullString, v == null, _ => sv(null));
+                switch (nullKind)
+                {
+                    case NullableOptionInclusionKind.IncludeAtStart:
+                        radioButtons.Insert(0, nullOption);
+                        break;
+
+                    case NullableOptionInclusionKind.IncludeAtEnd:
+                        radioButtons.Add(nullOption);
+                        break;
+                }
 
                 return Util.HorizontalRun((bool)true, (IEnumerable)radioButtons);
             };
 
         public static Func<object, PropertyInfo, Func<object>, Action<object>, object> ChoicesWithHyperlinqs<T>(
-            IEnumerable<T> choices, bool allowNull, Func<T, string> toString = null) =>
+            IEnumerable<T> choices, NullableOptionInclusionKind nullKind, Func<T, string> toString = null) =>
             (o, p, gv, sv) =>
             {
                 var preceding = new object[] {gv(), "["};
                 var trailing = new object[] {"]"};
 
                 var values = choices.Select(x => new Hyperlinq(() => sv(x), toString?.Invoke(x) ?? $"{x}")).ToList();
-                if (allowNull)
-                    values.Add(new Hyperlinq(() => sv(null), NullString ));
+
+                var nullOption = new Hyperlinq(() => sv(null), NullString);
+                
+                switch (nullKind)
+                {
+                    case NullableOptionInclusionKind.IncludeAtStart:
+                        values.Insert(0, nullOption);
+                        break;
+
+                    case NullableOptionInclusionKind.IncludeAtEnd:
+                        values.Add(nullOption);
+                        break;
+                }
 
                 return Util.HorizontalRun(
                     true,
