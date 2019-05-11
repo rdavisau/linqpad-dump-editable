@@ -64,7 +64,7 @@ async Task Main()
 		var text = config.IsCorrect() ? GoodText : BadText;
 		var color = config.IsCorrect() ? Color.Green : Color.Red;
 		var display = new Bitmap(img).MarkRegions(regionsInOriginalSpace, color);
-		
+		editor.Refresh();
 		output.Content = Util.VerticalRun(Util.Metatext(text),
 										  Util.HorizontalRun(true, editor, display), 
 										  "", "", Util.Metatext("Results:"), "",
@@ -76,12 +76,12 @@ async Task Main()
 
 public class SpriteCuttingConfig
 {
-	public int XOffset { get; set; }
-	public int YOffset { get; set; }
-	public int SpriteWidth { get; set; }
-	public int SpriteHeight { get; set; }
-	public int Rows { get; set; }
-	public int Cols { get; set; }
+	public short XOffset { get; set; }
+	public short YOffset { get; set; }
+	public short SpriteWidth { get; set; }
+	public short SpriteHeight { get; set; }
+	public short Rows { get; set; }
+	public short Cols { get; set; }
 }
 
 const string BadText =

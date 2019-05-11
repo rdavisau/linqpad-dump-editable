@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 
 namespace LINQPad.DumpEditable
 {
-    public static class Editors
+    public static partial class Editors
     {
         public static Func<object, PropertyInfo, Func<object>, Action<object>, object> Slider(int min, int max)
             => Slider<int>(min, max, x => x, x => x);
@@ -207,7 +207,7 @@ namespace LINQPad.DumpEditable
 
             var initialText = GetStringRepresentationForValue() ?? "";
             var s = !isEnumerable
-                    ? (ITextControl) new TextBox(initialText, "18em", onText) { IsMultithreaded = true } 
+                    ? (ITextControl) new TextBox(initialText, WidthForTextBox(o,p), onText) { IsMultithreaded = true } 
                     : (ITextControl) new TextArea(initialText, 40, onText) { IsMultithreaded = true };
 
             updateButton.Click += (sender, e) =>

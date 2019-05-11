@@ -34,5 +34,17 @@ namespace LINQPad.DumpEditable.Helpers
 
         public static bool IsNullableEnum(this Type t)
             => (Nullable.GetUnderlyingType(t)?.IsEnum ?? false);
+
+        public static bool IsNumeric(this Type t)
+            => NumericTypes.Contains(t);
+
+        private static readonly Type[] NumericTypes =
+        {
+            typeof(int), typeof(uint),
+            typeof(short), typeof(ushort),
+            typeof(long), typeof(ulong),
+            typeof(double), typeof(float),
+            typeof(decimal)
+        };
     }
 }
