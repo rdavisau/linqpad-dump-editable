@@ -18,7 +18,7 @@ DumpEditable comes with LINQPad samples, including basic 'How To' guides and a f
 This section outlines the basic concepts available in DumpEditable. The LINQPad samples provide more detail. 
 
 ### Showing an editor
-Getting an editor onto the results pane is as easy as calling `.DumpEditable()` on an object. `DumpEditable()` returns the input object so can be chained similarly to how LINQPad's `Dump()` can:
+Getting an editor onto the results pane is as easy as calling `.DumpEditable()` on an object. `DumpEditable()` returns the input object so can be chained similarly to LINQPad's `Dump()`:
 
 ![basic poco dumped with editor displayed](https://ryandavis.io/content/images/2019/05/dump-editable/basic.png)
 Here we see we got a basic editor for our `Pet` object without writing any code! Clicking any of the properties will allow us to modify the property values. 
@@ -44,9 +44,9 @@ Modifying instances of anonymous types can cause problems in the Real World, bec
 
 ### Adding custom editors
 
-DumpEditable works by evaluating each property of the target object against `EditorRule`s to decide whether a specific editor should be displayed. If no `EditorRule`s match for a given property, the default LINQPad output will be displayed instead. DumpEditable ships with basic editors for primitives and enums. You can extend DumpEditable by adding custom `EditorRule`s, which will be evaluated prior to the built-ins (FIFO). Rules consist of a `match` function, which decides whether the rule should apply to a given object property, and a `getEditor` function, which provides the editor content that will be displayed for the object property. The editor content should include any functionality required to get new values.
+DumpEditable works by evaluating each property of the target object against `EditorRule`s to decide whether a specific editor should be displayed. If no `EditorRule`s match for a given property, the default LINQPad output will be displayed instead. DumpEditable ships with basic editors for primitives and enums. You can extend DumpEditable by adding custom `EditorRule`s, which will be evaluated prior to the built-ins (LIFO). Rules consist of a `match` function, which decides whether the rule should apply to a given object property, and a `getEditor` function, which provides the editor content that will be displayed for the object property. The editor content should include any functionality required to get new values.
 
-`EditorRule` has a few helper methods you can use to make things easier. For example, the aptly named `EditorRule.ForTypeWithStringBasedEditor<T>(Func<string, out T, bool> parseFunc)` lets you provide a type parameter `T` and a `TryParse`-style `string -> T` conversion function, and gives you the rest - a basic input dialog implementation - for free. In the below case, we add support for editing `Guid`s:
+`EditorRule` has a few helper methods you can use to make things easier. For example, the aptly named `EditorRule.ForTypeWithStringBasedEditor<T>(Func<string, out T, bool> parseFunc)` lets you provide a type parameter `T` and a `TryParse`-style `string -> T` conversion function, and gives you the rest - a basic text box implementation - for free. In the below case, we add support for editing `Guid`s:
 ![adding a basic guid editor rule](https://ryandavis.io/content/images/2019/05/dump-editable/editor-rule-basic.png)
 
 For more control, you can implement an `EditorRule` from scratch, like in the below case where we match on a specific type's property, and provide an editor with images for content:
@@ -59,7 +59,7 @@ In both of the examples above we added 'global rules' that apply to all `Editabl
 DumpEditable also includes a slider control wrapper that you can pass to `getEditor`, accessible via the `Editors.Slider` overloads. 
 
 ![using a slider editor](https://ryandavis.io/content/images/2019/05/dump-editable/slider-editor.png)
-You can provide a minimum and maximum value using the appropriate overload, or rely on the "*" settings button at runtime. As the LINQPad slider works with integers only, using it with types other than integers requires you to provide `Func<T, object> toInt` and `Func<int,T>` conversion parameters. Note that your conversion function does not need to result in an `int` - rather, it must result in something that can be turned into an `int` using `Convert.ToInt32`, which DumpEditable will call internally. This saves you from needing to pollute your code with casts. A typical use of the conversion functions might be to specify a percentage-based slider by multiplying/dividing by 100. 
+You can provide a minimum and maximum value using the appropriate overload, or rely on the "*" settings button at runtime. As the LINQPad slider works with integers only, using it with types other than integers requires you to provide `Func<T, object> toInt` and `Func<int,T> fromInt` conversion parameters. Note that your conversion function does not need to result in an `int` - rather, it must result in something that can be turned into an `int` using `Convert.ToInt32`, which DumpEditable will call internally. This saves you from needing to pollute your code with casts. A typical use of the conversion functions might be to specify a percentage-based slider by multiplying/dividing a `float` or `double` by 100. 
 
 ![using a slider conversion function](https://ryandavis.io/content/images/2019/05/dump-editable/slider-percent.png)
 There might be other clever ways to make use of this functionality.
@@ -72,9 +72,18 @@ As you might have noticed earlier, nested objects within anonymous type instance
 
 - this hasn't been tried against any data contexts, database models etc. It might work fine; it might do Bad things like try to pull entire tables into memory. Use at your own risk
 
-- DumpEditable requires the query to 'keep running' (`Util.KeepRunning`) for property changes to work nicely after your query body has finished executing (which is likely to occur if you're using an event-based model). By default, DumpEditable automatically calls `Util.KeepRunning` for each running container. If you want to manage query lifetime yourself, can disable this behaviour by setting `EditableDumpContainer.DefaultOptions.AutomaticallyKeepQueryRunning` to `false` before dumping your first object
+- DumpEditable requires the query to 'keep running' (`Util.KeepRunning`) for property changes to work nicely after your query body has finished executing (which is likely to occur if you're using an event-based model). By default, DumpEditable automatically calls `Util.KeepRunning` for each running container. If you want to manage query lifetime yourself, can disable this behaviour by setting `EditableDumpContainer.DefaultOptions.AutomaticallyKeepQueryRunning` to `false` before dumping your first object. 
 
 - Because it's early days, DumpEditable will throw if it encounters an error when trying to generate an editor output. If you don't like this and would prefer it to fall back to displaying the usual LINQPad output, you can make sure `EditableDumpContainer.DefaultOptions.FailSilently` is set to `true` before dumping the offending object.
+
+- The source contains some scary type signatures that could probably be improved (named delegates?) and some of them leak into the extension API. While this is <v1.0 these end up getting refactored. 
+
+- You can't `DumpEditable` a value type directly, but you can wrap it in an anonymous type. For example:
+  ```
+  2.DumpEditable() // bad 😡
+  
+  new { N = 2 }.DumpEditable() // good! 🤠
+  ```
 
 ## Plans 
 
