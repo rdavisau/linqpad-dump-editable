@@ -37,7 +37,7 @@ namespace LINQPad.DumpEditable.Helpers
                 typeSignature = AnonymousTypeReplacement;
 
             var an = new AssemblyName(typeSignature);
-            var assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);
+            var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(an, AssemblyBuilderAccess.Run);
             var moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
             var tb = moduleBuilder.DefineType(typeSignature,
                     TypeAttributes.Public |

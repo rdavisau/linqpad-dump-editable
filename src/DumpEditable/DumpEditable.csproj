@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net47</TargetFramework>
+    <TargetFrameworks>net47;netcoreapp3.0</TargetFrameworks>
     <AssemblyName>LINQPad.DumpEditable</AssemblyName>
     <RootNamespace>LINQPad.DumpEditable</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -9,7 +9,7 @@
     <Version>0.0.1</Version>
     <Authors>Ryan Davis</Authors>
     <Product>DumpEditable.LINQPad</Product>
-    <Description>Extensible inline editor output for LINQPad. Requires LINQPad 5.36.3 or above.</Description>
+    <Description>Extensible inline editor output for LINQPad 5 / LINQPad 6.</Description>
     <Copyright>(c) Ryan Davis 2019</Copyright>
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rdavisau/linqpad-dump-editable</PackageProjectUrl>
@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="LINQPad" Version="5.36.3" />
+    <PackageReference Include="LINQPad.Reference" Version="1.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
   </ItemGroup>
 
