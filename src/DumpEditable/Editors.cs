@@ -118,10 +118,6 @@ namespace LINQPad.DumpEditable
         public static Func<EditorRule.ParseFunc<string, object, bool>, bool, bool, Func<object, PropertyInfo, Func<object>, Action<object>, object>> TextBoxBasedStringEditor
             (bool liveUpdates) => (parse, nullable, enumerable) => (o, p, gv, sv) =>
             Editors.StringWithTextBox(o, p, gv, sv, parse, nullable, enumerable, liveUpdates);
-        
-        public static Func<EditorRule.ParseFunc<string, object, bool>, bool, bool, Func<object, PropertyInfo, Func<object>, Action<object>, object>> InputBoxBasedStringEditor
-            => (parse, nullable, enumerable) => (o, p, gv, sv) =>
-            Editors.StringWithInputBox(o, p, gv, sv, parse, nullable, enumerable);
 
         internal static object StringWithTextBox<TOut>(object o, PropertyInfo p, Func<object> gv, Action<object> sv,
             EditorRule.ParseFunc<string, TOut, bool> parseFunc,
@@ -225,76 +221,6 @@ namespace LINQPad.DumpEditable
             };
 
             return dc;
-        }
-
-        internal static object StringWithInputBox<TOut>(object o, PropertyInfo p, Func<object> getCurrValue, Action<object> setNewValue, EditorRule.ParseFunc<string, TOut, bool> parseFunc,
-            bool supportNullable = true, bool supportEnumerable = true)
-        {
-            var type = p.PropertyType;
-            var isEnumerable = supportEnumerable && type.GetArrayLikeElementType() != null;
-
-            // handle string which is IEnumerable<char> 
-            if (type == typeof(string) && type.GetArrayLikeElementType() == typeof(char))
-                isEnumerable = false;
-
-            string GetStringDescription()
-            {
-                var currVal = getCurrValue();
-                var val = currVal == null
-                    ? NullString
-                    : (isEnumerable ? JsonConvert.SerializeObject(currVal) : $"{currVal}");
-
-                // hyperlinq doesn't like empty strings
-                if (val == String.Empty)
-                    val = EmptyString;
-
-                return val;
-            }
-
-            var dc = new DumpContainer();
-
-            Hyperlinq Update()
-            {
-                var desc = GetStringDescription();
-
-                return new Hyperlinq(() =>
-                {
-                    var newVal = Interaction.InputBox("Set value for " + p.Name, p.Name,
-                        desc != EmptyString ? desc : String.Empty);
-
-                    var canConvert = parseFunc(newVal, out var output);
-                    if (isEnumerable)
-                    {
-                        try
-                        {
-                            var val = JsonConvert.DeserializeObject(newVal, type);
-                            setNewValue(val);
-
-                            dc.Content = Update();
-                        }
-                        catch
-                        {
-                            return; // can't deserialise
-                        }
-                    }
-                    else if (canConvert)
-                    {
-                        setNewValue(output);
-                        dc.Content = Update();
-                    }
-                    else if (supportNullable && (newVal == String.Empty))
-                    {
-                        setNewValue(null);
-                        dc.Content = Update();
-                    }
-                    else
-                        return; // can't convert
-                }, desc);
-            }
-
-            dc.Content = Update();
-            
-            return Util.HorizontalRun(true, dc);
         }
         
         public const string NullString = "(null)";
