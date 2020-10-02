@@ -52,7 +52,7 @@ async Task Main()
 									x * config.SpriteWidth,
 									y * config.SpriteHeight,
 									config.SpriteWidth,
-									config.SpriteHeight).Do(spriteRects.Add)
+									config.SpriteHeight).DoSingle(spriteRects.Add)
 						), $"{x},{y}"))
 				.ToList();
 				
@@ -115,6 +115,12 @@ public static class Ext
 				g.DrawRectangle(p, r);
 
 		return b;
+	}
+	
+	public static T DoSingle<T>(this T item, Action<T> action)
+	{
+		action(item);
+		return item;
 	}
 	
 	public static IEnumerable<T> Do<T>(this IEnumerable<T> items, Action<T> action)
